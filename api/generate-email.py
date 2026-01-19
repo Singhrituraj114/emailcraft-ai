@@ -41,13 +41,27 @@ Guidelines:
 
 Format your response as a complete email with greeting, body, and closing."""
             
-            # Set environment for OpenRouter - use OpenAI compatibility
-            os.environ["OPENAI_API_KEY"] = api_key
-            os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
+            # Create custom OpenAI client with OpenRouter settings
+            from openai import AsyncOpenAI
             
-            # Create agent using string model name - Pydantic AI will handle OpenAI client creation
+            openai_client = AsyncOpenAI(
+                api_key=api_key,
+                base_url="https://openrouter.ai/api/v1",
+                default_headers={
+                    "HTTP-Referer": "https://emailcraft-ai.vercel.app",
+                    "X-Title": "EmailCraft AI"
+                }
+            )
+            
+            # Create model with custom client
+            model = OpenAIModel(
+                model_name='gpt-3.5-turbo',
+                openai_client=openai_client
+            )
+            
+            # Create agent using custom model
             email_agent = Agent(
-                'openai:gpt-3.5-turbo',
+                model,
                 system_prompt=system_prompt,
                 retries=2,
             )

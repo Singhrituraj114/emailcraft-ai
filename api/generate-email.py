@@ -11,7 +11,7 @@ class handler(BaseHTTPRequestHandler):
             from pydantic_ai import Agent
             
             # Set environment variables
-            api_key = os.environ.get("OPENROUTER_API_KEY", "")
+            api_key = os.environ.get("OPENROUTER_API_KEY", "").strip()
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY environment variable is not set in Vercel")
             

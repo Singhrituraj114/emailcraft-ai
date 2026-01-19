@@ -27,7 +27,7 @@ class handler(BaseHTTPRequestHandler):
             recipient_name = data.get('recipient_name')
             additional_details = data.get('additional_details')
             
-            # Create agent with OpenRouter headers
+            # Create agent with OpenRouter
             system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
 clear, and effective emails based on the user's context and requirements.
 
@@ -41,26 +41,13 @@ Guidelines:
 
 Format your response as a complete email with greeting, body, and closing."""
             
-            # Set environment for OpenRouter
+            # Set environment for OpenRouter - use OpenAI compatibility
             os.environ["OPENAI_API_KEY"] = api_key
+            os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
             
-            # Create custom httpx client with OpenRouter headers
-            http_client = httpx.AsyncClient(
-                headers={
-                    "HTTP-Referer": "https://emailcraft-ai.vercel.app",
-                    "X-Title": "EmailCraft AI"
-                }
-            )
-            
-            # Create model with custom client
-            model = OpenAIModel(
-                'gpt-3.5-turbo',
-                base_url='https://openrouter.ai/api/v1',
-                http_client=http_client
-            )
-            
+            # Create agent using string model name - Pydantic AI will handle OpenAI client creation
             email_agent = Agent(
-                model,
+                'openai:gpt-3.5-turbo',
                 system_prompt=system_prompt,
                 retries=2,
             )

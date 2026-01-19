@@ -1,9 +1,6 @@
 import { useState } from 'react'
 import Head from 'next/head'
 import { Sparkles, Mail, Loader2, Copy, Check, AlertCircle } from 'lucide-react'
-import axios from 'axios'
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 interface EmailResponse {
   subject: string
@@ -39,45 +36,33 @@ export default function Home() {
     setResult(null)
 
     try {
-      console.log('Sending request to:', `${API_URL}/api/generate-email`)
-      console.log('Request data:', { context: context.substring(0, 50), tone })
-      
-      const response = await axios.post<EmailResponse>(`${API_URL}/api/generate-email`, {
-        context: context.trim(),
-        tone,
-        recipient_name: recipientName.trim() || null,
-        additional_details: additionalDetails.trim() || null,
-      }, {
-        timeout: 90000, // 90 second timeout for free models
+      const response = await fetch('/api/generate-email', {
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-        }
+        },
+        body: JSON.stringify({
+          context: context.trim(),
+          tone,
+          recipient_name: recipientName.trim() || null,
+          additional_details: additionalDetails.trim() || null,
+        }),
       })
 
-      console.log('Response received:', response.status)
+      const data = await response.json()
       
-      if (response.data && response.data.subject && response.data.body) {
-        setResult(response.data)
+      if (!response.ok) {
+        throw new Error(data.detail || data.error || 'Failed to generate email')
+      }
+      
+      if (data && data.subject && data.body) {
+        setResult(data)
       } else {
         throw new Error('Invalid response format from server')
       }
     } catch (err: any) {
-      console.error('Error details:', err)
-      console.error('Error response:', err.response?.data)
-      
-      let errorMessage = 'An unexpected error occurred. Please try again.'
-      
-      if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
-        errorMessage = 'Request timed out. The AI model is taking too long. Please try again.'
-      } else if (err.response?.data?.error) {
-        errorMessage = err.response.data.error
-      } else if (err.response?.data?.detail) {
-        errorMessage = err.response.data.detail
-      } else if (err.message && err.message !== 'Network Error') {
-        errorMessage = err.message
-      }
-      
-      setError(errorMessage)
+      console.error('Error generating email:', err)
+      setError(err.message || 'An unexpected error occurred. Please try again.')
     } finally {
       setLoading(false)
     }

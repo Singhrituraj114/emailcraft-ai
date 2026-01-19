@@ -13,7 +13,10 @@ class handler(BaseHTTPRequestHandler):
             # Set environment variables
             api_key = os.environ.get("OPENROUTER_API_KEY", "")
             if not api_key:
-                raise ValueError("OPENROUTER_API_KEY not set")
+                raise ValueError("OPENROUTER_API_KEY environment variable is not set in Vercel")
+            
+            if not api_key.startswith("sk-or-v1-"):
+                raise ValueError("Invalid OPENROUTER_API_KEY format. Please get a new key from https://openrouter.ai/settings/keys")
             
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)

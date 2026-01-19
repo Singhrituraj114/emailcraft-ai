@@ -3,37 +3,57 @@ import json
 import os
 import asyncio
 from datetime import datetime
+import traceback
 
 # Set environment variables
-os.environ["OPENAI_API_KEY"] = os.environ.get("OPENROUTER_API_KEY", "")
+api_key = os.environ.get("OPENROUTER_API_KEY", "")
+os.environ["OPENAI_API_KEY"] = api_key
 os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
 
 # Import after setting env vars
-from pydantic_ai import Agent
-
-# Create agent
-system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
-clear, and effective emails based on the user's context and requirements.
-
-Guidelines:
-- Always maintain the requested tone
-- Keep emails concise but complete
-- Use proper email etiquette
-- Include appropriate greetings and closings
-- Be culturally sensitive and professional
-- Avoid jargon unless specifically requested
-
-Format your response as a complete email with greeting, body, and closing."""
-
-email_agent = Agent(
-    'openai:gpt-3.5-turbo',
-    system_prompt=system_prompt,
-    retries=2,
-)
+try:
+    from pydantic_ai import Agent
+    
+    # Create agent
+    system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
+    clear, and effective emails based on the user's context and requirements.
+    
+    Guidelines:
+    - Always maintain the requested tone
+    - Keep emails concise but complete
+    - Use proper email etiquette
+    - Include appropriate greetings and closings
+    - Be culturally sensitive and professional
+    - Avoid jargon unless specifically requested
+    
+    Format your response as a complete email with greeting, body, and closing."""
+    
+    email_agent = Agent(
+        'openai:gpt-3.5-turbo',
+        system_prompt=system_prompt,
+        retries=2,
+    )
+    agent_loaded = True
+except Exception as e:
+    agent_loaded = False
+    agent_error = str(e)
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
+            # Check if agent loaded successfully
+            if not agent_loaded:
+                self.send_response(500)
+                self.send_header('Content-type', 'application/json')
+                self.send_header('Access-Control-Allow-Origin', '*')
+                self.end_headers()
+                error_response = {
+                    "error": f"Agent initialization failed: {agent_error}",
+                    "detail": "Failed to initialize AI agent"
+                }
+                self.wfile.write(json.dumps(error_response).encode('utf-8'))
+                return
+            
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
             data = json.loads(post_data.decode('utf-8'))
@@ -99,7 +119,11 @@ Write a complete, ready-to-send professional email."""
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
             self.end_headers()
-            error_response = {"error": str(e), "detail": "Error generating email"}
+            error_response = {
+                "error": str(e),
+                "detail": "Error generating email",
+                "traceback": traceback.format_exc()
+            }
             self.wfile.write(json.dumps(error_response).encode('utf-8'))
     
     def do_OPTIONS(self):

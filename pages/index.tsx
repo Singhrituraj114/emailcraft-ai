@@ -3,7 +3,7 @@ import Head from 'next/head'
 import { Sparkles, Mail, Loader2, Copy, Check, AlertCircle } from 'lucide-react'
 import axios from 'axios'
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'
+const API_URL = process.env.NEXT_PUBLIC_API_URL || ''
 
 interface EmailResponse {
   subject: string

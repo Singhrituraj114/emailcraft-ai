@@ -56,7 +56,7 @@ Format your response as a complete email with greeting, body, and closing."""
             # Create model with custom client
             model = OpenAIModel(
                 model_name='gpt-3.5-turbo',
-                openai_client=openai_client
+                openai_async_client=openai_client
             )
             
             # Create agent using custom model

@@ -27,37 +27,57 @@ export default function Home() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    
+    // Validate context
+    if (context.trim().length < 10) {
+      setError('Please enter at least 10 characters for the email context.')
+      return
+    }
+    
     setLoading(true)
     setError(null)
     setResult(null)
 
     try {
       console.log('Sending request to:', `${API_URL}/api/generate-email`)
+      console.log('Request data:', { context: context.substring(0, 50), tone })
+      
       const response = await axios.post<EmailResponse>(`${API_URL}/api/generate-email`, {
-        context,
+        context: context.trim(),
         tone,
-        recipient_name: recipientName || null,
-        additional_details: additionalDetails || null,
+        recipient_name: recipientName.trim() || null,
+        additional_details: additionalDetails.trim() || null,
       }, {
-        timeout: 60000, // 60 second timeout for free models
+        timeout: 90000, // 90 second timeout for free models
+        headers: {
+          'Content-Type': 'application/json',
+        }
       })
 
-      console.log('Response received:', response.data)
-      setResult(response.data)
+      console.log('Response received:', response.status)
+      
+      if (response.data && response.data.subject && response.data.body) {
+        setResult(response.data)
+      } else {
+        throw new Error('Invalid response format from server')
+      }
     } catch (err: any) {
       console.error('Error details:', err)
-      console.error('Error response:', err.response)
-      if (err.code === 'ECONNABORTED') {
-        setError('Request timed out. Please try again.')
+      console.error('Error response:', err.response?.data)
+      
+      let errorMessage = 'An unexpected error occurred. Please try again.'
+      
+      if (err.code === 'ECONNABORTED' || err.code === 'ETIMEDOUT') {
+        errorMessage = 'Request timed out. The AI model is taking too long. Please try again.'
       } else if (err.response?.data?.error) {
-        setError(err.response.data.error)
+        errorMessage = err.response.data.error
       } else if (err.response?.data?.detail) {
-        setError(err.response.data.detail)
-      } else if (err.message) {
-        setError(err.message)
-      } else {
-        setError('An unexpected error occurred. Please try again.')
+        errorMessage = err.response.data.detail
+      } else if (err.message && err.message !== 'Network Error') {
+        errorMessage = err.message
       }
+      
+      setError(errorMessage)
     } finally {
       setLoading(false)
     }

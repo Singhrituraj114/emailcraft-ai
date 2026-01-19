@@ -18,6 +18,7 @@ export default function Home() {
   const [recipientName, setRecipientName] = useState('')
   const [additionalDetails, setAdditionalDetails] = useState('')
   const [mentionAttachments, setMentionAttachments] = useState(false)
+  const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<EmailResponse | null>(null)
@@ -83,8 +84,29 @@ export default function Home() {
     setContext('')
     setRecipientName('')
     setAdditionalDetails('')
+    setMentionAttachments(false)
+    setResumeFile(null)
     setResult(null)
     setError(null)
+  }
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Check file type
+      const validTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain']
+      if (!validTypes.includes(file.type)) {
+        setError('Please upload a PDF, Word document, or text file')
+        return
+      }
+      // Check file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        setError('File size must be less than 5MB')
+        return
+      }
+      setResumeFile(file)
+      setMentionAttachments(true)
+    }
   }
 
   return (
@@ -207,6 +229,42 @@ export default function Home() {
                   <label htmlFor="attachments" className="text-sm font-medium text-gray-700">
                     Mention attached documents (e.g., resume, portfolio)
                   </label>
+                </div>
+
+                <div>
+                  <label htmlFor="resume" className="block text-sm font-semibold text-gray-700 mb-2">
+                    Upload Resume/CV (Optional)
+                  </label>
+                  <div className="flex items-center space-x-3">
+                    <label className="btn-secondary cursor-pointer flex items-center space-x-2">
+                      <Mail className="h-4 w-4" />
+                      <span>{resumeFile ? 'Change File' : 'Choose File'}</span>
+                      <input
+                        type="file"
+                        id="resume"
+                        accept=".pdf,.doc,.docx,.txt"
+                        onChange={handleFileChange}
+                        className="hidden"
+                      />
+                    </label>
+                    {resumeFile && (
+                      <div className="flex items-center space-x-2">
+                        <span className="text-sm text-gray-600">
+                          {resumeFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setResumeFile(null)}
+                          className="text-red-600 hover:text-red-800"
+                        >
+                          ✕
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    PDF, Word, or Text file (max 5MB)
+                  </p>
                 </div>
 
                 <button

@@ -69,7 +69,7 @@ Write a complete, ready-to-send professional email."""
                             "Content-Type": "application/json"
                         },
                         json={
-                            "model": "qwen/qwen3-next-80b-a3b-instruct:free",
+                            "model": "nvidia/nemotron-3-nano-30b-a3b:free",
                             "messages": [
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": prompt}

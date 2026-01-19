@@ -59,7 +59,7 @@ Write a complete, ready-to-send professional email."""
             
             # Make direct API call to OpenRouter
             async def generate_email():
-                async with httpx.AsyncClient(timeout=30.0) as client:
+                async with httpx.AsyncClient(timeout=90.0) as client:
                     response = await client.post(
                         "https://openrouter.ai/api/v1/chat/completions",
                         headers={

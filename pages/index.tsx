@@ -38,7 +38,7 @@ export default function Home() {
         recipient_name: recipientName || null,
         additional_details: additionalDetails || null,
       }, {
-        timeout: 30000, // 30 second timeout
+        timeout: 60000, // 60 second timeout for free models
       })
 
       setResult(response.data)

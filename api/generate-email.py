@@ -27,6 +27,7 @@ class handler(BaseHTTPRequestHandler):
             tone = data.get('tone', 'professional')
             recipient_name = data.get('recipient_name')
             additional_details = data.get('additional_details')
+            mention_attachments = data.get('mention_attachments', False)
             
             # Create agent with OpenRouter using direct API call
             system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
@@ -48,10 +49,11 @@ Format your response as a complete email with greeting, body, and closing."""
             # Build prompt
             recipient = f"to {recipient_name}" if recipient_name else ""
             additional = f"\n\nAdditional details: {additional_details}" if additional_details else ""
+            attachments = "\n\nIMPORTANT: Mention that relevant documents (resume, portfolio, etc.) are attached to this email." if mention_attachments else ""
             
             prompt = f"""Write a {tone} email {recipient} with the following context:
 
-Context: {context}{additional}
+Context: {context}{additional}{attachments}
 
 Tone: {tone}
 

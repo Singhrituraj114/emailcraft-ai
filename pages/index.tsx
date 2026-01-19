@@ -17,6 +17,7 @@ export default function Home() {
   const [tone, setTone] = useState<ToneType>('professional')
   const [recipientName, setRecipientName] = useState('')
   const [additionalDetails, setAdditionalDetails] = useState('')
+  const [mentionAttachments, setMentionAttachments] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [result, setResult] = useState<EmailResponse | null>(null)
@@ -46,6 +47,7 @@ export default function Home() {
           tone,
           recipient_name: recipientName.trim() || null,
           additional_details: additionalDetails.trim() || null,
+          mention_attachments: mentionAttachments,
         }),
       })
 
@@ -192,6 +194,19 @@ export default function Home() {
                     onChange={(e) => setAdditionalDetails(e.target.value)}
                     maxLength={500}
                   />
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <input
+                    type="checkbox"
+                    id="attachments"
+                    checked={mentionAttachments}
+                    onChange={(e) => setMentionAttachments(e.target.checked)}
+                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                  />
+                  <label htmlFor="attachments" className="text-sm font-medium text-gray-700">
+                    Mention attached documents (e.g., resume, portfolio)
+                  </label>
                 </div>
 
                 <button

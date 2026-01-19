@@ -41,6 +41,9 @@ Guidelines:
 
 Format your response as a complete email with greeting, body, and closing."""
             
+            # Set environment for OpenRouter
+            os.environ["OPENAI_API_KEY"] = api_key
+            
             # Create custom httpx client with OpenRouter headers
             http_client = httpx.AsyncClient(
                 headers={
@@ -52,7 +55,6 @@ Format your response as a complete email with greeting, body, and closing."""
             # Create model with custom client
             model = OpenAIModel(
                 'gpt-3.5-turbo',
-                api_key=api_key,
                 base_url='https://openrouter.ai/api/v1',
                 http_client=http_client
             )

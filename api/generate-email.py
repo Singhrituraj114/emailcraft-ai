@@ -1,58 +1,22 @@
 from http.server import BaseHTTPRequestHandler
 import json
 import os
-import asyncio
 from datetime import datetime
-import traceback
-
-# Set environment variables
-api_key = os.environ.get("OPENROUTER_API_KEY", "")
-os.environ["OPENAI_API_KEY"] = api_key
-os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
-
-# Import after setting env vars
-try:
-    from pydantic_ai import Agent
-    
-    # Create agent
-    system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
-    clear, and effective emails based on the user's context and requirements.
-    
-    Guidelines:
-    - Always maintain the requested tone
-    - Keep emails concise but complete
-    - Use proper email etiquette
-    - Include appropriate greetings and closings
-    - Be culturally sensitive and professional
-    - Avoid jargon unless specifically requested
-    
-    Format your response as a complete email with greeting, body, and closing."""
-    
-    email_agent = Agent(
-        'openai:gpt-3.5-turbo',
-        system_prompt=system_prompt,
-        retries=2,
-    )
-    agent_loaded = True
-except Exception as e:
-    agent_loaded = False
-    agent_error = str(e)
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
-            # Check if agent loaded successfully
-            if not agent_loaded:
-                self.send_response(500)
-                self.send_header('Content-type', 'application/json')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                error_response = {
-                    "error": f"Agent initialization failed: {agent_error}",
-                    "detail": "Failed to initialize AI agent"
-                }
-                self.wfile.write(json.dumps(error_response).encode('utf-8'))
-                return
+            # Import inside the handler to catch import errors
+            import asyncio
+            from pydantic_ai import Agent
+            
+            # Set environment variables
+            api_key = os.environ.get("OPENROUTER_API_KEY", "")
+            if not api_key:
+                raise ValueError("OPENROUTER_API_KEY not set")
+                
+            os.environ["OPENAI_API_KEY"] = api_key
+            os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
             
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -63,6 +27,26 @@ class handler(BaseHTTPRequestHandler):
             tone = data.get('tone', 'professional')
             recipient_name = data.get('recipient_name')
             additional_details = data.get('additional_details')
+            
+            # Create agent
+            system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
+clear, and effective emails based on the user's context and requirements.
+
+Guidelines:
+- Always maintain the requested tone
+- Keep emails concise but complete
+- Use proper email etiquette
+- Include appropriate greetings and closings
+- Be culturally sensitive and professional
+- Avoid jargon unless specifically requested
+
+Format your response as a complete email with greeting, body, and closing."""
+            
+            email_agent = Agent(
+                'openai:gpt-3.5-turbo',
+                system_prompt=system_prompt,
+                retries=2,
+            )
             
             # Build prompt
             recipient = f"to {recipient_name}" if recipient_name else ""
@@ -115,6 +99,7 @@ Write a complete, ready-to-send professional email."""
             self.wfile.write(json.dumps(response).encode('utf-8'))
             
         except Exception as e:
+            import traceback
             self.send_response(500)
             self.send_header('Content-type', 'application/json')
             self.send_header('Access-Control-Allow-Origin', '*')
@@ -122,7 +107,8 @@ Write a complete, ready-to-send professional email."""
             error_response = {
                 "error": str(e),
                 "detail": "Error generating email",
-                "traceback": traceback.format_exc()
+                "traceback": traceback.format_exc(),
+                "env_check": "OPENROUTER_API_KEY" in os.environ
             }
             self.wfile.write(json.dumps(error_response).encode('utf-8'))
     

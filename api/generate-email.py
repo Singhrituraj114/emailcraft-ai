@@ -25,7 +25,7 @@ class handler(BaseHTTPRequestHandler):
             recipient_name = data.get('recipient_name')
             additional_details = data.get('additional_details')
             
-            # Create agent with OpenRouter - use environment variable approach
+            # Create agent with OpenRouter using direct API call
             system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
 clear, and effective emails based on the user's context and requirements.
 
@@ -39,16 +39,8 @@ Guidelines:
 
 Format your response as a complete email with greeting, body, and closing."""
             
-            # Set OpenAI environment variables for OpenRouter
-            os.environ["OPENAI_API_KEY"] = api_key
-            os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
-            
-            # Create agent - Pydantic AI will use environment variables
-            email_agent = Agent(
-                'openai:gpt-3.5-turbo',
-                system_prompt=system_prompt,
-                retries=2,
-            )
+            # Use httpx to call OpenRouter directly with proper headers
+            import httpx
             
             # Build prompt
             recipient = f"to {recipient_name}" if recipient_name else ""
@@ -62,14 +54,36 @@ Tone: {tone}
 
 Write a complete, ready-to-send professional email."""
             
-            # Run agent
+            # Make direct API call to OpenRouter
+            async def generate_email():
+                async with httpx.AsyncClient(timeout=30.0) as client:
+                    response = await client.post(
+                        "https://openrouter.ai/api/v1/chat/completions",
+                        headers={
+                            "Authorization": f"Bearer {api_key}",
+                            "HTTP-Referer": "https://emailcraft-ai.vercel.app",
+                            "X-Title": "EmailCraft AI",
+                            "Content-Type": "application/json"
+                        },
+                        json={
+                            "model": "openai/gpt-3.5-turbo",
+                            "messages": [
+                                {"role": "system", "content": system_prompt},
+                                {"role": "user", "content": prompt}
+                            ]
+                        }
+                    )
+                    response.raise_for_status()
+                    return response.json()
+            
+            # Run async function
             loop = asyncio.new_event_loop()
             asyncio.set_event_loop(loop)
-            result = loop.run_until_complete(email_agent.run(prompt))
+            result = loop.run_until_complete(generate_email())
             loop.close()
             
-            # Get email text
-            email_text = result.data if hasattr(result, 'data') else str(result)
+            # Extract email text from response
+            email_text = result['choices'][0]['message']['content']
             
             # Extract subject
             lines = email_text.strip().split('\n')

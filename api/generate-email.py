@@ -9,14 +9,13 @@ class handler(BaseHTTPRequestHandler):
             # Import inside the handler to catch import errors
             import asyncio
             from pydantic_ai import Agent
+            from pydantic_ai.models.openai import OpenAIModel
+            import httpx
             
             # Set environment variables
             api_key = os.environ.get("OPENROUTER_API_KEY", "")
             if not api_key:
                 raise ValueError("OPENROUTER_API_KEY not set")
-                
-            os.environ["OPENAI_API_KEY"] = api_key
-            os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
             
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -28,7 +27,7 @@ class handler(BaseHTTPRequestHandler):
             recipient_name = data.get('recipient_name')
             additional_details = data.get('additional_details')
             
-            # Create agent
+            # Create agent with OpenRouter headers
             system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
 clear, and effective emails based on the user's context and requirements.
 
@@ -42,8 +41,24 @@ Guidelines:
 
 Format your response as a complete email with greeting, body, and closing."""
             
+            # Create custom httpx client with OpenRouter headers
+            http_client = httpx.AsyncClient(
+                headers={
+                    "HTTP-Referer": "https://emailcraft-ai.vercel.app",
+                    "X-Title": "EmailCraft AI"
+                }
+            )
+            
+            # Create model with custom client
+            model = OpenAIModel(
+                'gpt-3.5-turbo',
+                api_key=api_key,
+                base_url='https://openrouter.ai/api/v1',
+                http_client=http_client
+            )
+            
             email_agent = Agent(
-                'openai:gpt-3.5-turbo',
+                model,
                 system_prompt=system_prompt,
                 retries=2,
             )

@@ -2,15 +2,13 @@ from http.server import BaseHTTPRequestHandler
 import json
 import os
 from datetime import datetime
+import asyncio
+import traceback
 
 class handler(BaseHTTPRequestHandler):
     def do_POST(self):
         try:
-            # Import inside the handler to catch import errors
-            import asyncio
             from pydantic_ai import Agent
-            from pydantic_ai.models.openai import OpenAIModel
-            import httpx
             
             # Set environment variables
             api_key = os.environ.get("OPENROUTER_API_KEY", "")
@@ -27,7 +25,7 @@ class handler(BaseHTTPRequestHandler):
             recipient_name = data.get('recipient_name')
             additional_details = data.get('additional_details')
             
-            # Create agent with OpenRouter
+            # Create agent with OpenRouter - use environment variable approach
             system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
 clear, and effective emails based on the user's context and requirements.
 
@@ -41,24 +39,13 @@ Guidelines:
 
 Format your response as a complete email with greeting, body, and closing."""
             
-            # Create custom OpenAI client with OpenRouter settings
-            from openai import AsyncOpenAI
+            # Set OpenAI environment variables for OpenRouter
+            os.environ["OPENAI_API_KEY"] = api_key
+            os.environ["OPENAI_BASE_URL"] = "https://openrouter.ai/api/v1"
             
-            openai_client = AsyncOpenAI(
-                api_key=api_key,
-                base_url="https://openrouter.ai/api/v1",
-                default_headers={
-                    "HTTP-Referer": "https://emailcraft-ai.vercel.app",
-                    "X-Title": "EmailCraft AI"
-                }
-            )
-            
-            # Create model - just pass the client directly
-            model = OpenAIModel('gpt-3.5-turbo', openai_client=openai_client)
-            
-            # Create agent using custom model
+            # Create agent - Pydantic AI will use environment variables
             email_agent = Agent(
-                model,
+                'openai:gpt-3.5-turbo',
                 system_prompt=system_prompt,
                 retries=2,
             )

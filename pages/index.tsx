@@ -32,6 +32,7 @@ export default function Home() {
     setResult(null)
 
     try {
+      console.log('Sending request to:', `${API_URL}/api/generate-email`)
       const response = await axios.post<EmailResponse>(`${API_URL}/api/generate-email`, {
         context,
         tone,
@@ -41,17 +42,21 @@ export default function Home() {
         timeout: 60000, // 60 second timeout for free models
       })
 
+      console.log('Response received:', response.data)
       setResult(response.data)
     } catch (err: any) {
-      console.error('Error generating email:', err)
+      console.error('Error details:', err)
+      console.error('Error response:', err.response)
       if (err.code === 'ECONNABORTED') {
         setError('Request timed out. Please try again.')
+      } else if (err.response?.data?.error) {
+        setError(err.response.data.error)
       } else if (err.response?.data?.detail) {
         setError(err.response.data.detail)
       } else if (err.message) {
         setError(err.message)
       } else {
-        setError('Failed to generate email. Please try again.')
+        setError('An unexpected error occurred. Please try again.')
       }
     } finally {
       setLoading(false)

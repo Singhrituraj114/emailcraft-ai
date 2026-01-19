@@ -66,7 +66,7 @@ Write a complete, ready-to-send professional email."""
                             "Content-Type": "application/json"
                         },
                         json={
-                            "model": "openai/gpt-3.5-turbo",
+                            "model": "qwen/qwen3-next-80b-a3b-instruct:free",
                             "messages": [
                                 {"role": "system", "content": system_prompt},
                                 {"role": "user", "content": prompt}

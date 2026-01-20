@@ -389,7 +389,7 @@ export default function Home() {
                       </div>
                       <button
                         onClick={copyToClipboard}
-                          className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-indigo-400 hover:bg-gray-700 rounded-lg transition-all hover:scale-105 active:scale-95">
+                        className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-indigo-400 hover:bg-gray-700 rounded-lg transition-all hover:scale-105 active:scale-95"
                       >
                         {copied ? (
                           <>

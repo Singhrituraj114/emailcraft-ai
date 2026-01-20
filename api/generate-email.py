@@ -28,6 +28,7 @@ class handler(BaseHTTPRequestHandler):
             recipient_name = data.get('recipient_name')
             additional_details = data.get('additional_details')
             mention_attachments = data.get('mention_attachments', False)
+            sender_signature = data.get('sender_signature', {})
             
             # Create agent with OpenRouter using direct API call
             system_prompt = """You are an expert email writing assistant. Your task is to craft professional, 
@@ -100,10 +101,45 @@ Write a complete, ready-to-send professional email."""
                     email_text = '\n'.join(lines[:i] + lines[i+1:])
                     break
             
+            # Append sender signature if provided
+            email_body = email_text.strip()
+            if sender_signature and any(sender_signature.values()):
+                signature_parts = []
+                
+                if sender_signature.get('name'):
+                    signature_parts.append(sender_signature['name'])
+                
+                # Build title/department/company line
+                title_line_parts = []
+                if sender_signature.get('title'):
+                    title_line_parts.append(sender_signature['title'])
+                if sender_signature.get('department'):
+                    title_line_parts.append(sender_signature['department'])
+                if title_line_parts:
+                    signature_parts.append(' | '.join(title_line_parts))
+                
+                if sender_signature.get('company'):
+                    signature_parts.append(sender_signature['company'])
+                
+                # Build contact line
+                contact_parts = []
+                if sender_signature.get('phone'):
+                    contact_parts.append(sender_signature['phone'])
+                if sender_signature.get('email'):
+                    contact_parts.append(sender_signature['email'])
+                if contact_parts:
+                    signature_parts.append(' | '.join(contact_parts))
+                
+                if sender_signature.get('linkedin'):
+                    signature_parts.append(sender_signature['linkedin'])
+                
+                if signature_parts:
+                    email_body += '\n\n' + '\n'.join(signature_parts)
+            
             # Create response
             response = {
                 "subject": subject_line,
-                "body": email_text.strip(),
+                "body": email_body,
                 "tone": tone,
                 "generated_at": datetime.utcnow().isoformat(),
                 "suggestions": [

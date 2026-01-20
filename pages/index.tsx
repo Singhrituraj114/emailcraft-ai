@@ -20,6 +20,15 @@ export default function Home() {
   const [additionalDetails, setAdditionalDetails] = useState('')
   const [mentionAttachments, setMentionAttachments] = useState(false)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
+  
+  // Sender signature fields
+  const [senderName, setSenderName] = useState('')
+  const [senderTitle, setSenderTitle] = useState('')
+  const [senderDepartment, setSenderDepartment] = useState('')
+  const [senderCompany, setSenderCompany] = useState('')
+  const [senderPhone, setSenderPhone] = useState('')
+  const [senderSignatureEmail, setSenderSignatureEmail] = useState('')
+  const [senderLinkedIn, setSenderLinkedIn] = useState('')
   const [loading, setLoading] = useState(false)
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -52,6 +61,15 @@ export default function Home() {
           recipient_name: recipientName.trim() || null,
           additional_details: additionalDetails.trim() || null,
           mention_attachments: mentionAttachments,
+          sender_signature: {
+            name: senderName.trim() || null,
+            title: senderTitle.trim() || null,
+            department: senderDepartment.trim() || null,
+            company: senderCompany.trim() || null,
+            phone: senderPhone.trim() || null,
+            email: senderSignatureEmail.trim() || null,
+            linkedin: senderLinkedIn.trim() || null,
+          },
         }),
       })
 
@@ -271,6 +289,118 @@ export default function Home() {
                   <p className="text-xs text-gray-500 mt-1">
                     Enter email address to enable sending feature
                   </p>
+                </div>
+
+                {/* Sender Signature Section */}
+                <div className="border-t border-gray-700 pt-6 mt-6">
+                  <h3 className="text-sm font-semibold text-gray-200 mb-4">Your Signature (Optional)</h3>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label htmlFor="senderName" className="block text-xs font-medium text-gray-400 mb-1">
+                        Your Name
+                      </label>
+                      <input
+                        type="text"
+                        id="senderName"
+                        className="input-field"
+                        placeholder="E.g., John Doe"
+                        value={senderName}
+                        onChange={(e) => setSenderName(e.target.value)}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="senderTitle" className="block text-xs font-medium text-gray-400 mb-1">
+                        Your Title
+                      </label>
+                      <input
+                        type="text"
+                        id="senderTitle"
+                        className="input-field"
+                        placeholder="E.g., Software Engineer"
+                        value={senderTitle}
+                        onChange={(e) => setSenderTitle(e.target.value)}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="senderDepartment" className="block text-xs font-medium text-gray-400 mb-1">
+                        Department
+                      </label>
+                      <input
+                        type="text"
+                        id="senderDepartment"
+                        className="input-field"
+                        placeholder="E.g., Engineering"
+                        value={senderDepartment}
+                        onChange={(e) => setSenderDepartment(e.target.value)}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="senderCompany" className="block text-xs font-medium text-gray-400 mb-1">
+                        Company
+                      </label>
+                      <input
+                        type="text"
+                        id="senderCompany"
+                        className="input-field"
+                        placeholder="E.g., Google LLC"
+                        value={senderCompany}
+                        onChange={(e) => setSenderCompany(e.target.value)}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="senderPhone" className="block text-xs font-medium text-gray-400 mb-1">
+                        Phone
+                      </label>
+                      <input
+                        type="tel"
+                        id="senderPhone"
+                        className="input-field"
+                        placeholder="E.g., +1 (555) 123-4567"
+                        value={senderPhone}
+                        onChange={(e) => setSenderPhone(e.target.value)}
+                        maxLength={50}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label htmlFor="senderSignatureEmail" className="block text-xs font-medium text-gray-400 mb-1">
+                        Your Email
+                      </label>
+                      <input
+                        type="email"
+                        id="senderSignatureEmail"
+                        className="input-field"
+                        placeholder="E.g., john@company.com"
+                        value={senderSignatureEmail}
+                        onChange={(e) => setSenderSignatureEmail(e.target.value)}
+                        maxLength={100}
+                      />
+                    </div>
+                    
+                    <div className="col-span-2">
+                      <label htmlFor="senderLinkedIn" className="block text-xs font-medium text-gray-400 mb-1">
+                        LinkedIn Profile (Optional)
+                      </label>
+                      <input
+                        type="url"
+                        id="senderLinkedIn"
+                        className="input-field"
+                        placeholder="E.g., linkedin.com/in/johndoe"
+                        value={senderLinkedIn}
+                        onChange={(e) => setSenderLinkedIn(e.target.value)}
+                        maxLength={200}
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 <div>

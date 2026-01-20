@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import Head from 'next/head'
-import { Sparkles, Mail, Loader2, Copy, Check, AlertCircle } from 'lucide-react'
+import { Sparkles, Mail, Loader2, Copy, Check, AlertCircle, Send } from 'lucide-react'
 
 interface EmailResponse {
   subject: string
@@ -16,11 +16,14 @@ export default function Home() {
   const [context, setContext] = useState('')
   const [tone, setTone] = useState<ToneType>('professional')
   const [recipientName, setRecipientName] = useState('')
+  const [recipientEmail, setRecipientEmail] = useState('')
   const [additionalDetails, setAdditionalDetails] = useState('')
   const [mentionAttachments, setMentionAttachments] = useState(false)
   const [resumeFile, setResumeFile] = useState<File | null>(null)
   const [loading, setLoading] = useState(false)
+  const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [sendSuccess, setSendSuccess] = useState(false)
   const [result, setResult] = useState<EmailResponse | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -80,14 +83,63 @@ export default function Home() {
     }
   }
 
+  const sendEmail = async () => {
+    if (!result || !recipientEmail) {
+      setError('Please enter a recipient email address')
+      return
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailRegex.test(recipientEmail)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    setSending(true)
+    setError(null)
+    setSendSuccess(false)
+
+    try {
+      const response = await fetch('/api/send-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          recipient_email: recipientEmail,
+          subject: result.subject,
+          body: result.body,
+          sender_name: 'EmailCraft AI',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || data.detail || 'Failed to send email')
+      }
+
+      setSendSuccess(true)
+      setTimeout(() => setSendSuccess(false), 5000)
+    } catch (err: any) {
+      console.error('Error sending email:', err)
+      setError(err.message || 'Failed to send email. Please try again.')
+    } finally {
+      setSending(false)
+    }
+  }
+
   const resetForm = () => {
     setContext('')
     setRecipientName('')
+    setRecipientEmail('')
     setAdditionalDetails('')
     setMentionAttachments(false)
     setResumeFile(null)
     setResult(null)
     setError(null)
+    setSendSuccess(false)
   }
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -117,18 +169,18 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
 
-      <div className="min-h-screen bg-gradient-to-br from-primary-50 via-white to-blue-50">
+      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 animate-gradient">
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <header className="bg-gray-800/95 border-b border-gray-700 sticky top-0 z-50 backdrop-blur-md shadow-lg">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="bg-primary-600 p-2 rounded-lg">
+                <div className="bg-indigo-600 p-2 rounded-lg shadow-lg shadow-indigo-900/50 animate-pulse-glow">
                   <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">EmailCraft AI</h1>
-                  <p className="text-sm text-gray-500">Professional Email Assistant</p>
+                  <h1 className="text-2xl font-bold text-gray-100">EmailCraft AI</h1>
+                  <p className="text-sm text-gray-400">Professional Email Assistant</p>
                 </div>
               </div>
             </div>
@@ -137,11 +189,11 @@ export default function Home() {
 
         {/* Main Content */}
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+          <div className="text-center mb-12 animate-slide-in-up">
+            <h2 className="text-4xl font-bold text-gray-100 mb-4">
               Craft Perfect Emails in Seconds
             </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+            <p className="text-xl text-gray-400 max-w-2xl mx-auto">
               Let AI help you write professional, clear, and effective emails. 
               Just describe what you need, and we'll handle the rest.
             </p>
@@ -149,10 +201,10 @@ export default function Home() {
 
           <div className="grid lg:grid-cols-2 gap-8">
             {/* Input Form */}
-            <div className="card">
+            <div className="card transform transition-all duration-300 hover:shadow-2xl hover:shadow-indigo-900/20">
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div>
-                  <label htmlFor="context" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="context" className="block text-sm font-semibold text-gray-300 mb-2">
                     What do you want to say? *
                   </label>
                   <textarea
@@ -172,7 +224,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label htmlFor="tone" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="tone" className="block text-sm font-semibold text-gray-300 mb-2">
                     Email Tone
                   </label>
                   <select
@@ -189,7 +241,7 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label htmlFor="recipient" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="recipient" className="block text-sm font-semibold text-gray-300 mb-2">
                     Recipient Name (Optional)
                   </label>
                   <input
@@ -204,7 +256,25 @@ export default function Home() {
                 </div>
 
                 <div>
-                  <label htmlFor="details" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="recipientEmail" className="block text-sm font-semibold text-gray-300 mb-2">
+                    Recipient Email (For Sending)
+                  </label>
+                  <input
+                    type="email"
+                    id="recipientEmail"
+                    className="input-field"
+                    placeholder="E.g., john@example.com"
+                    value={recipientEmail}
+                    onChange={(e) => setRecipientEmail(e.target.value)}
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-gray-500 mt-1">
+                    Enter email address to enable sending feature
+                  </p>
+                </div>
+
+                <div>
+                  <label htmlFor="details" className="block text-sm font-semibold text-gray-300 mb-2">
                     Additional Details (Optional)
                   </label>
                   <textarea
@@ -224,15 +294,15 @@ export default function Home() {
                     id="attachments"
                     checked={mentionAttachments}
                     onChange={(e) => setMentionAttachments(e.target.checked)}
-                    className="w-4 h-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                    className="w-4 h-4 text-indigo-600 bg-gray-700 border-gray-600 rounded focus:ring-indigo-500 focus:ring-offset-gray-800"
                   />
-                  <label htmlFor="attachments" className="text-sm font-medium text-gray-700">
+                  <label htmlFor="attachments" className="text-sm font-medium text-gray-300">
                     Mention attached documents (e.g., resume, portfolio)
                   </label>
                 </div>
 
                 <div>
-                  <label htmlFor="resume" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="resume" className="block text-sm font-semibold text-gray-300 mb-2">
                     Upload Resume/CV (Optional)
                   </label>
                   <div className="flex items-center space-x-3">
@@ -249,7 +319,7 @@ export default function Home() {
                     </label>
                     {resumeFile && (
                       <div className="flex items-center space-x-2">
-                        <span className="text-sm text-gray-600">
+                        <span className="text-sm text-gray-400">
                           {resumeFile.name}
                         </span>
                         <button
@@ -290,36 +360,36 @@ export default function Home() {
             {/* Output Area */}
             <div className="space-y-6">
               {error && (
-                <div className="bg-red-50 border border-red-200 rounded-lg p-4 flex items-start space-x-3">
+                <div className="bg-red-900/20 border border-red-800 rounded-lg p-4 flex items-start space-x-3 animate-slide-in-up shadow-lg shadow-red-900/20">
                   <AlertCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                   <div>
-                    <h3 className="font-semibold text-red-900">Error</h3>
-                    <p className="text-sm text-red-700 mt-1">{error}</p>
+                    <h3 className="font-semibold text-red-400">Error</h3>
+                    <p className="text-sm text-red-300 mt-1">{error}</p>
                   </div>
                 </div>
               )}
 
               {loading && (
-                <div className="card">
+                <div className="card animate-slide-in-up shadow-2xl shadow-indigo-900/30">
                   <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                    <Loader2 className="h-12 w-12 text-primary-600 animate-spin" />
-                    <p className="text-gray-600 font-medium">Crafting your perfect email...</p>
+                    <Loader2 className="h-12 w-12 text-indigo-500 animate-spin" />
+                    <p className="text-gray-300 font-medium">Crafting your perfect email...</p>
                     <p className="text-sm text-gray-500">This may take a few seconds</p>
                   </div>
                 </div>
               )}
 
               {result && !loading && (
-                <div className="space-y-4">
-                  <div className="card">
+                <div className="space-y-4 animate-slide-in-up">
+                  <div className="card shadow-2xl shadow-indigo-900/20 hover:shadow-indigo-900/30">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-2">
-                        <Mail className="h-5 w-5 text-primary-600" />
-                        <h3 className="font-semibold text-gray-900">Generated Email</h3>
+                          <Mail className="h-5 w-5 text-indigo-400" />
+                          <h3 className="font-semibold text-gray-100">Generated Email</h3>
                       </div>
                       <button
                         onClick={copyToClipboard}
-                        className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-primary-600 hover:bg-primary-50 rounded-lg transition-colors"
+                          className="flex items-center space-x-2 px-3 py-1.5 text-sm font-medium text-indigo-400 hover:bg-gray-700 rounded-lg transition-all hover:scale-105 active:scale-95">
                       >
                         {copied ? (
                           <>
@@ -340,21 +410,21 @@ export default function Home() {
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                           Subject Line
                         </label>
-                        <p className="mt-1 text-gray-900 font-medium">{result.subject}</p>
+                        <p className="mt-1 text-gray-100 font-medium">{result.subject}</p>
                       </div>
 
                       <div>
                         <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide">
                           Email Body
                         </label>
-                        <div className="mt-2 p-4 bg-gray-50 rounded-lg">
-                          <pre className="text-gray-900 whitespace-pre-wrap font-sans text-sm leading-relaxed">
+                        <div className="mt-2 p-4 bg-gray-900/50 rounded-lg border border-gray-700 shadow-inner">
+                          <pre className="text-gray-200 whitespace-pre-wrap font-sans text-sm leading-relaxed">
                             {result.body}
                           </pre>
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                      <div className="flex items-center justify-between pt-4 border-t border-gray-700">
                         <span className="text-xs text-gray-500">
                           Tone: <span className="font-medium capitalize">{result.tone}</span>
                         </span>
@@ -366,12 +436,12 @@ export default function Home() {
                   </div>
 
                   {result.suggestions && result.suggestions.length > 0 && (
-                    <div className="card bg-primary-50 border-primary-200">
-                      <h4 className="font-semibold text-gray-900 mb-3">💡 Suggestions</h4>
+                    <div className="card bg-indigo-900/20 border-indigo-800 shadow-lg shadow-indigo-900/20 hover:shadow-indigo-900/30">
+                      <h4 className="font-semibold text-gray-100 mb-3">💡 Suggestions</h4>
                       <ul className="space-y-2">
                         {result.suggestions.map((suggestion, index) => (
-                          <li key={index} className="text-sm text-gray-700 flex items-start">
-                            <span className="text-primary-600 mr-2">•</span>
+                          <li key={index} className="text-sm text-gray-300 flex items-start">
+                            <span className="text-indigo-400 mr-2">•</span>
                             <span>{suggestion}</span>
                           </li>
                         ))}
@@ -379,23 +449,55 @@ export default function Home() {
                     </div>
                   )}
 
-                  <button
-                    onClick={resetForm}
-                    className="btn-secondary w-full"
-                  >
-                    Generate Another Email
-                  </button>
+                  {sendSuccess && (
+                    <div className="bg-green-900/20 border border-green-800 rounded-lg p-4 flex items-start space-x-3 animate-slide-in-up shadow-lg shadow-green-900/20">
+                      <Check className="h-5 w-5 text-green-400 flex-shrink-0 mt-0.5" />
+                      <div>
+                        <h3 className="font-semibold text-green-400">Email Sent Successfully!</h3>
+                        <p className="text-sm text-green-300 mt-1">
+                          Your email has been sent to {recipientEmail}
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex flex-col sm:flex-row gap-3">
+                    <button
+                      onClick={sendEmail}
+                      disabled={sending || !recipientEmail}
+                      className="btn-primary flex-1 flex items-center justify-center space-x-2"
+                      title={!recipientEmail ? 'Please enter recipient email address' : ''}
+                    >
+                      {sending ? (
+                        <>
+                          <Loader2 className="h-5 w-5 animate-spin" />
+                          <span>Sending...</span>
+                        </>
+                      ) : (
+                        <>
+                          <Send className="h-5 w-5" />
+                          <span>Send Email</span>
+                        </>
+                      )}
+                    </button>
+                    <button
+                      onClick={resetForm}
+                      className="btn-secondary flex-1"
+                    >
+                      Generate Another Email
+                    </button>
+                  </div>
                 </div>
               )}
 
               {!result && !loading && !error && (
-                <div className="card bg-gray-50 border-gray-200">
+                <div className="card bg-gray-800/50 border-gray-700">
                   <div className="text-center py-12">
-                    <Mail className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                    <Mail className="h-16 w-16 text-gray-600 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-200 mb-2">
                       Ready to Generate
                     </h3>
-                    <p className="text-gray-600">
+                    <p className="text-gray-400">
                       Fill in the form and click "Generate Email" to see your AI-crafted message here.
                     </p>
                   </div>
@@ -406,30 +508,30 @@ export default function Home() {
 
           {/* Features Section */}
           <div className="mt-20 grid md:grid-cols-3 gap-8">
-            <div className="text-center">
-              <div className="bg-primary-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Sparkles className="h-6 w-6 text-primary-600" />
+            <div className="text-center p-6 rounded-xl bg-gray-800/50 border border-gray-700 hover:bg-gray-800 hover:shadow-xl hover:scale-105 hover:-translate-y-1 transition-all duration-300">
+              <div className="bg-indigo-900/40 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-800 shadow-lg shadow-indigo-900/30 animate-float">
+                <Sparkles className="h-6 w-6 text-indigo-400" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">AI-Powered</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-gray-100 mb-2">AI-Powered</h3>
+              <p className="text-gray-400 text-sm">
                 Advanced AI understands context and generates perfectly tailored emails
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-primary-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Mail className="h-6 w-6 text-primary-600" />
+              <div className="bg-indigo-900/40 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-800">
+                <Mail className="h-6 w-6 text-indigo-400" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Multiple Tones</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-gray-100 mb-2">Multiple Tones</h3>
+              <p className="text-gray-400 text-sm">
                 Choose from professional, friendly, formal, or casual tones
               </p>
             </div>
             <div className="text-center">
-              <div className="bg-primary-100 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Check className="h-6 w-6 text-primary-600" />
+              <div className="bg-indigo-900/40 w-12 h-12 rounded-full flex items-center justify-center mx-auto mb-4 border border-indigo-800">
+                <Check className="h-6 w-6 text-indigo-400" />
               </div>
-              <h3 className="font-semibold text-gray-900 mb-2">Instant Results</h3>
-              <p className="text-gray-600 text-sm">
+              <h3 className="font-semibold text-gray-100 mb-2">Instant Results</h3>
+              <p className="text-gray-400 text-sm">
                 Get professionally crafted emails in seconds, not minutes
               </p>
             </div>
@@ -437,9 +539,9 @@ export default function Home() {
         </main>
 
         {/* Footer */}
-        <footer className="bg-white border-t border-gray-200 mt-20">
+        <footer className="bg-gray-800 border-t border-gray-700 mt-20">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-            <p className="text-center text-gray-500 text-sm">
+            <p className="text-center text-gray-400 text-sm">
               Built with Pydantic AI, Next.js, and TailwindCSS
             </p>
           </div>

@@ -14,6 +14,7 @@ EmailCraft AI is an intelligent email writing assistant that uses advanced AI to
 ### ✨ Key Features
 
 - **AI-Powered Generation**: Uses Pydantic AI with Meta Llama 3.1 8B Instruct (free model via OpenRouter)
+- **Email Sending**: Send generated emails directly to recipients via SMTP
 - **Multiple Tone Options**: Professional, Friendly, Formal, or Casual
 - **Smart Suggestions**: Get actionable tips to improve your emails
 - **Real-time Validation**: Input validation with helpful error messages
@@ -87,8 +88,17 @@ pip install -r requirements.txt
 # Create .env file
 copy .env.example .env
 
-# Edit .env and add your API key
+# Edit .env and add your API keys
 # OPENROUTER_API_KEY=your_actual_api_key_here
+# 
+# For email sending feature (optional):
+# SMTP_HOST=smtp.gmail.com
+# SMTP_PORT=587
+# SMTP_USERNAME=your-email@gmail.com
+# SMTP_PASSWORD=your-app-password
+# SENDER_EMAIL=your-email@gmail.com
+#
+# See EMAIL_SENDING_SETUP.md for detailed configuration
 ```
 
 ### Frontend Setup
